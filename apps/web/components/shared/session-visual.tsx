@@ -1,6 +1,8 @@
 "use client"
 import type { ReactNode } from "react"
+import { Clock3, MapPin } from "lucide-react"
 import {
+  formatTime,
   initials,
   themeById,
   useMedia,
@@ -9,19 +11,9 @@ import {
   type Speaker,
 } from "@/components/shared/summit-data"
 
-const patterns = {
-  dots: "radial-gradient(rgba(255,255,255,.28) 1.5px, transparent 1.6px)",
-  grid: "linear-gradient(rgba(255,255,255,.14) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.14) 1px, transparent 1px)",
-  rings:
-    "repeating-radial-gradient(circle at 85% 15%, rgba(255,255,255,.16) 0 2px, transparent 2px 22px)",
-  waves:
-    "repeating-linear-gradient(-35deg, rgba(255,255,255,.12) 0 2px, transparent 2px 18px)",
-}
-const patternSize = { dots: "18px 18px", grid: "26px 26px", rings: "auto", waves: "auto" }
-
 type Look = Pick<Session, "theme" | "cover" | "mediaId">
 
-/** Resolves the artwork for a session: its own pick, then the theme's, else generated. */
+/** Resolves the artwork for a session: its own pick, then the theme's, else the event artwork. */
 export function useSessionArt(s: Look) {
   const [media] = useMedia()
   const [themeArt] = useThemeArt()
@@ -30,9 +22,9 @@ export function useSessionArt(s: Look) {
 }
 
 /**
- * The session banner. Looks complete from the admin's text alone:
- * theme gradient + pattern + icon. An uploaded cover is layered underneath
- * a scrim so the title always stays readable.
+ * The session card attendees see. With no uploads it uses the shared event
+ * artwork (sunrise + podium) and the theme colour. An uploaded cover sits
+ * behind a scrim so the title always stays readable.
  */
 export function SessionBanner({
   session,
@@ -41,7 +33,8 @@ export function SessionBanner({
   footer,
   className = "",
 }: {
-  session: Pick<Session, "title" | "time" | "venue" | "status"> & Look
+  session: Pick<Session, "title" | "time" | "venue" | "status"> &
+    Look & { type?: string }
   size?: "card" | "hero"
   live?: boolean
   footer?: ReactNode
@@ -49,66 +42,67 @@ export function SessionBanner({
 }) {
   const theme = themeById(session.theme)
   const art = useSessionArt(session)
-  const Icon = theme.icon
   const isLive = live ?? session.status === "Live"
   const hero = size === "hero"
+  const time = formatTime(session.time).range
   return (
     <div
-      className={`relative isolate overflow-hidden text-white ${hero ? "rounded-3xl p-5" : "rounded-2xl p-4"} ${className}`}
-      style={{ background: theme.gradient }}
+      className={`relative isolate overflow-hidden rounded-2xl border border-[#e8edf6] ${art ? "text-white" : "sunrise text-[#0f1e4d]"} ${hero ? "p-5" : "p-4"} ${className}`}
     >
-      {art && (
+      {art ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={art} alt="" className="absolute inset-0 -z-20 h-full w-full object-cover" />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#0f1e4d]/85 via-[#0f1e4d]/45 to-[#0f1e4d]/10" />
+        </>
+      ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={art}
+          src="/illustrations/podium.webp"
           alt=""
-          className="absolute inset-0 -z-20 h-full w-full object-cover"
+          aria-hidden
+          className={`absolute -right-3 -bottom-2 -z-10 ${hero ? "w-40" : "w-28"}`}
         />
       )}
-      {art && (
-        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 via-black/35 to-black/15" />
-      )}
-      {!art && (
-        <>
-          <div
-            aria-hidden
-            className="absolute inset-0 -z-10 opacity-70"
-            style={{
-              backgroundImage: patterns[theme.pattern],
-              backgroundSize: patternSize[theme.pattern],
-            }}
-          />
-          <Icon
-            aria-hidden
-            strokeWidth={1.25}
-            className={`absolute -z-10 text-white/15 ${hero ? "-right-6 -bottom-6 h-44 w-44" : "-right-4 -bottom-4 h-32 w-32"}`}
-          />
-        </>
-      )}
+      <span
+        className="absolute inset-y-4 left-0 w-1 rounded-r-full"
+        style={{ background: theme.accent }}
+      />
       <div className="flex items-center justify-between gap-3">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-extrabold tracking-[.16em] uppercase backdrop-blur-sm">
-          <Icon size={12} />
+        <span
+          className="text-[11px] font-semibold tracking-[.14em] uppercase"
+          style={{ color: art ? "#fff" : theme.accent }}
+        >
+          {session.type ? `${session.type} · ` : ""}
           {theme.label}
         </span>
         {isLive ? (
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold tracking-[.16em] uppercase">
-            <span className="live-pulse h-2 w-2 rounded-full bg-red-400" />
-            Live
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e5373b] px-2.5 py-1 text-[11px] font-semibold text-white">
+            <span className="live-pulse h-1.5 w-1.5 rounded-full bg-white" />
+            Live Now
           </span>
         ) : (
-          <span className="text-[10px] font-bold tracking-wider uppercase opacity-80">
+          <span
+            className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${art ? "bg-white/20" : "bg-white/80 text-[#44506e]"}`}
+          >
             {session.status}
           </span>
         )}
       </div>
       <h3
-        className={`font-display leading-tight font-semibold ${hero ? "mt-6 text-[32px]" : "mt-4 text-xl"}`}
+        className={`font-display max-w-[72%] leading-tight ${hero ? "mt-3 text-[24px]" : "mt-2 text-[19px]"}`}
       >
         {session.title || "Untitled session"}
       </h3>
-      <p className="mt-2 text-xs font-medium text-white/85">
-        {[session.time, session.venue].filter(Boolean).join(" · ") ||
-          "Time and venue"}
+      <p
+        className={`mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[13px] ${art ? "text-white/85" : "text-[#44506e]"}`}
+      >
+        <span className="flex items-center gap-1">
+          <Clock3 size={13} /> {time || "Time"}
+        </span>
+        <span className="flex items-center gap-1">
+          <MapPin size={13} /> {session.venue || "Venue"}
+        </span>
       </p>
       {footer && <div className="mt-4">{footer}</div>}
     </div>
@@ -118,7 +112,7 @@ export function SessionBanner({
 /** Photo when provided, initials when not. Same layout either way. */
 export function SpeakerAvatar({
   speaker,
-  tone = "#1d4ed8",
+  tone = "#0b57f5",
 }: {
   speaker: Speaker
   tone?: string
@@ -127,25 +121,19 @@ export function SpeakerAvatar({
     <div className="flex items-center gap-3">
       {speaker.photo ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={speaker.photo}
-          alt=""
-          className="h-10 w-10 rounded-full object-cover"
-        />
+        <img src={speaker.photo} alt="" className="h-10 w-10 rounded-full object-cover" />
       ) : (
         <span
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-extrabold text-white"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-bold text-white"
           style={{ background: tone }}
         >
           {initials(speaker.name)}
         </span>
       )}
       <div className="min-w-0 leading-tight">
-        <p className="truncate text-sm font-bold">{speaker.name}</p>
+        <p className="truncate text-sm font-semibold">{speaker.name}</p>
         {speaker.role && (
-          <p className="truncate text-xs text-muted-foreground">
-            {speaker.role}
-          </p>
+          <p className="truncate text-xs text-muted-foreground">{speaker.role}</p>
         )}
       </div>
     </div>

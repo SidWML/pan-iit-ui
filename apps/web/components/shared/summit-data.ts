@@ -3,17 +3,18 @@ import {
   Building2,
   Cpu,
   Dna,
-  Leaf,
   Landmark,
+  MoreHorizontal,
   Rocket,
-  TrendingUp,
+  Sprout,
+  Users,
   Zap,
   type LucideIcon,
 } from "lucide-react"
 import { usePersistedState } from "@/components/shared/use-persisted-state"
 
 /* ------------------------------------------------------------------ */
-/* Themes: every session gets its look from these, with zero uploads.  */
+/* Themes: Annexure A1. Colours match the approved mobile mockups.     */
 /* ------------------------------------------------------------------ */
 export type ThemeId =
   | "energy"
@@ -24,197 +25,239 @@ export type ThemeId =
   | "governance"
   | "skilling"
   | "amaravati"
+  | "other"
 
 export type Theme = {
   id: ThemeId
+  /** Short chip label. */
   label: string
+  /** Full name as shown in the Summit Themes list. */
+  name: string
   icon: LucideIcon
-  gradient: string
+  /** Solid icon colour. */
   accent: string
+  /** Pastel row / card tint. */
   soft: string
-  pattern: "dots" | "grid" | "rings" | "waves"
+  /** Solid fill for icon tiles in admin screens. */
+  gradient: string
 }
 
+const theme = (
+  id: ThemeId,
+  label: string,
+  name: string,
+  icon: LucideIcon,
+  accent: string,
+  soft: string
+): Theme => ({ id, label, name, icon, accent, soft, gradient: accent })
+
 export const themes: Theme[] = [
-  {
-    id: "energy",
-    label: "Energy",
-    icon: Zap,
-    gradient: "linear-gradient(135deg,#92400e 0%,#d97706 55%,#f59e0b 100%)",
-    accent: "#b45309",
-    soft: "#fef3c7",
-    pattern: "waves",
-  },
-  {
-    id: "deeptech",
-    label: "Deep Tech",
-    icon: Cpu,
-    gradient: "linear-gradient(135deg,#4c1d95 0%,#6d28d9 55%,#2563eb 100%)",
-    accent: "#6d28d9",
-    soft: "#ede9fe",
-    pattern: "grid",
-  },
-  {
-    id: "space",
-    label: "Space",
-    icon: Rocket,
-    gradient: "linear-gradient(135deg,#0f172a 0%,#312e81 60%,#4338ca 100%)",
-    accent: "#4338ca",
-    soft: "#e0e7ff",
-    pattern: "dots",
-  },
-  {
-    id: "biovalley",
-    label: "BioValley",
-    icon: Dna,
-    gradient: "linear-gradient(135deg,#9d174d 0%,#db2777 55%,#fb7185 100%)",
-    accent: "#be185d",
-    soft: "#fce7f3",
-    pattern: "rings",
-  },
-  {
-    id: "agritech",
-    label: "Agri Tech",
-    icon: Leaf,
-    gradient: "linear-gradient(135deg,#14532d 0%,#15803d 55%,#65a30d 100%)",
-    accent: "#15803d",
-    soft: "#dcfce7",
-    pattern: "waves",
-  },
-  {
-    id: "governance",
-    label: "Governance",
-    icon: Landmark,
-    gradient: "linear-gradient(135deg,#0c4a6e 0%,#0e7490 55%,#0891b2 100%)",
-    accent: "#0e7490",
-    soft: "#cffafe",
-    pattern: "grid",
-  },
-  {
-    id: "skilling",
-    label: "Skilling",
-    icon: TrendingUp,
-    gradient: "linear-gradient(135deg,#9a3412 0%,#ea580c 55%,#fb923c 100%)",
-    accent: "#c2410c",
-    soft: "#ffedd5",
-    pattern: "dots",
-  },
-  {
-    id: "amaravati",
-    label: "Amaravati",
-    icon: Building2,
-    gradient: "linear-gradient(135deg,#713f12 0%,#a16207 55%,#ca8a04 100%)",
-    accent: "#a16207",
-    soft: "#fef9c3",
-    pattern: "rings",
-  },
+  theme("energy", "Energy", "Energy in the Age of AI", Zap, "#f5a300", "#fff5d9"),
+  theme("deeptech", "Deep Tech", "Deep Tech in All Walks of Life; Product Perfection", Cpu, "#6d4df2", "#f0ecfe"),
+  theme("space", "Space", "Space, Aerospace & Defence Manufacturing", Rocket, "#3f5bf0", "#e9eeff"),
+  theme("biovalley", "BioValley", "BioValley — Health Access & Screening at Scale", Dna, "#14a150", "#e7f7ec"),
+  theme("agritech", "Agri Tech", "Agri Tech — Farmers & Water Security", Sprout, "#e8761c", "#ffefe0"),
+  theme("governance", "Governance", "AI in Governance", Landmark, "#d92d2d", "#fdecec"),
+  theme("skilling", "Skilling", "Skilling & Entrepreneurship", Users, "#0e9fbf", "#e2f6fa"),
+  theme("amaravati", "Amaravati", "Amaravati Capital City", Building2, "#8155f0", "#f2ecfe"),
+  theme("other", "Other", "Other / Cross-cutting", MoreHorizontal, "#7d86a3", "#f1f3f8"),
 ]
 
 export const themeById = (id?: string): Theme =>
-  themes.find((t) => t.id === id) ?? themes[1]!
+  themes.find((t) => t.id === id) ?? themes[themes.length - 1]!
 
 /* ------------------------------------------------------------------ */
-/* Sessions                                                            */
+/* Event configuration (Section 7). Admin toggles live in Settings.    */
+/* ------------------------------------------------------------------ */
+export type EventConfig = {
+  login: { google: boolean; email: boolean; otp: boolean }
+  ideaWindowOpen: boolean
+  ideaWindowCloses: string
+  summitFeedbackOpen: boolean
+  summitFeedbackOpens: string
+  inputTypes: { question: boolean; idea: boolean; opinion: boolean }
+}
+export const defaultConfig: EventConfig = {
+  login: { google: true, email: true, otp: false },
+  ideaWindowOpen: true,
+  ideaWindowCloses: "5:00 PM",
+  summitFeedbackOpen: false,
+  summitFeedbackOpens: "5:15 PM",
+  inputTypes: { question: true, idea: true, opinion: true },
+}
+export function useEventConfig() {
+  const [raw, setConfig] = usePersistedState<EventConfig>(
+    "summit-config",
+    defaultConfig
+  )
+  return [{ ...defaultConfig, ...raw }, setConfig] as const
+}
+
+/** CFG-13 / CFG-14 defaults. */
+export const ideaFields = {
+  title: { label: "Title", required: true, max: 100 },
+  proposed: { label: "Proposed Idea", required: true, max: 500 },
+  problem: { label: "Problem / Opportunity", required: false, max: 500 },
+  impact: { label: "Expected Impact", required: false, max: 500 },
+} as const
+export const INPUT_MAX = 500
+
+/** CFG-19 attendee-facing messages. */
+export const messages = {
+  opensAt: (t: string) => `Opens at ${t}`,
+  paused: "Participation is temporarily paused — please try again shortly.",
+  closed: "This session has closed.",
+  invited: "This Round Table is for invited participants only.",
+}
+
+export const EVENT_DATE = "3 Oct 2026"
+
+/* ------------------------------------------------------------------ */
+/* Sessions: Annexure A2                                               */
 /* ------------------------------------------------------------------ */
 export type Speaker = { name: string; role: string; photo?: string }
+export type SessionStatus = "Upcoming" | "Live" | "Paused" | "Closed"
 export type Session = {
   id: string
+  type: string
   title: string
+  /** 24-hour "HH:MM–HH:MM". */
   time: string
   venue: string
   status: string
   theme: ThemeId
-  /** "auto" = generated from theme. "media" = picked from the library. */
+  access: "Open" | "Invited"
+  feedback: boolean
+  /** "auto" = event artwork. "media" = picked from the library. */
   cover: "auto" | "media"
   mediaId?: string
   speakers: Speaker[]
+  invitees?: string[]
+  /** Assigned coordinator (OUT-01). */
+  coordinator?: string
+  /** Epoch ms when the session last went Live / Closed. */
+  liveAt?: number
+  closedAt?: number
 }
 
+const s = (
+  id: string,
+  type: string,
+  title: string,
+  time: string,
+  themeId: ThemeId,
+  extra: Partial<Session> = {}
+): Session => ({
+  id,
+  type,
+  title,
+  time,
+  venue: "Main Hall",
+  status: "Upcoming",
+  theme: themeId,
+  access: "Open",
+  feedback: true,
+  cover: "auto",
+  speakers: [],
+  coordinator: `Coordinator – ${id}`,
+  ...extra,
+})
+
 export const initialSessions: Session[] = [
-  {
-    id: "S1",
-    title: "Energy in the Age of AI",
-    time: "09:05–09:55",
-    venue: "Main Hall",
+  s("S1", "Panel 1", "Energy in the Age of AI", "09:05–09:55", "energy", {
     status: "Live",
-    theme: "energy",
-    cover: "auto",
+    coordinator: "Ravi Kumar",
     speakers: [
       { name: "Anil Sharma", role: "CEO, XYZ Energy" },
       { name: "Meera Iyer", role: "Director, Grid Labs" },
-      { name: "Kiran Reddy", role: "Secretary, Energy Dept" },
+      { name: "Kiran Reddy", role: "Energy Department, GoAP" },
     ],
-  },
-  {
-    id: "S2",
-    title: "Deep Tech in All Walks of Life",
-    time: "11:15–12:05",
-    venue: "Main Hall",
-    status: "Upcoming",
-    theme: "deeptech",
-    cover: "auto",
-    speakers: [{ name: "Priya Nair", role: "Founder, Quanta" }],
-  },
-  {
-    id: "S3",
-    title: "Space, Aerospace & Defence",
-    time: "12:10–13:00",
-    venue: "Main Hall",
-    status: "Upcoming",
-    theme: "space",
-    cover: "auto",
-    speakers: [],
-  },
-  {
-    id: "S4",
-    title: "BioValley",
-    time: "13:50–14:40",
-    venue: "Main Hall",
-    status: "Upcoming",
-    theme: "biovalley",
-    cover: "auto",
-    speakers: [],
-  },
+  }),
+  s("S2", "Panel 2", "Deep Tech in All Walks of Life", "11:15–12:05", "deeptech", {
+    coordinator: "Ravi Kumar",
+    speakers: [
+      { name: "Priya Raman", role: "Founder, Quanta Labs" },
+      { name: "Vivek Rao", role: "Partner, Deep Ventures" },
+    ],
+  }),
+  s("S3", "Panel 3", "Space, Aerospace & Defence Mfg.", "12:10–13:00", "space"),
+  s("S4", "Panel 4", "BioValley", "13:50–14:40", "biovalley"),
+  s("S5", "Panel 5", "Agri Tech", "14:45–15:35", "agritech"),
+  s("S6", "Talk 1 · Fireside", "Skilling & Entrepreneurship", "15:40–16:10", "skilling"),
+  s("S7", "Talk 2 · Fireside", "AI in Governance", "16:10–16:40", "governance"),
+  s("S8", "Talk 3 · Presentation", "Amaravati Capital City", "16:40–17:00", "amaravati"),
+  s("S9", "Round Table 1", "IIT Directors’ Conclave", "14:00–15:30", "other", {
+    coordinator: "Ravi Kumar",
+    venue: "First Floor RT Room 1",
+    access: "Invited",
+    feedback: false,
+  }),
+  s("S10", "Round Table 2", "VCs & Family Offices", "14:15–15:45", "other", {
+    venue: "First Floor RT Room 2",
+    access: "Invited",
+    feedback: false,
+  }),
+  s("S11", "Round Table 3", "Industry Leaders & Unicorn CXOs", "14:30–16:00", "other", {
+    venue: "First Floor RT Room 3",
+    access: "Invited",
+    feedback: false,
+  }),
 ]
 
-const guessTheme = (title: string): ThemeId =>
-  /energy|power|grid/i.test(title)
-    ? "energy"
-    : /space|aero|defen/i.test(title)
-      ? "space"
-      : /bio|health/i.test(title)
-        ? "biovalley"
-        : /agri|farm/i.test(title)
-          ? "agritech"
-          : /govern|policy/i.test(title)
-            ? "governance"
-            : /skill|talent|educat/i.test(title)
-              ? "skilling"
-              : /amaravati/i.test(title)
-                ? "amaravati"
-                : "deeptech"
-
-/** Older saved sessions (before themes existed) still render correctly. */
-const normalise = (s: Partial<Session> & { id: string; title: string }): Session => ({
-  time: "",
-  venue: "Main Hall",
-  status: "Upcoming",
-  theme: guessTheme(s.title),
-  cover: "auto",
-  speakers: [],
-  ...s,
-})
+/** Older saved sessions still render correctly. */
+const normalise = (x: Partial<Session> & { id: string; title: string }): Session =>
+  s(x.id, x.type ?? "Session", x.title, x.time ?? "", x.theme ?? "other", x)
 
 export function useSessions() {
-  const [raw, setSessions] = usePersistedState<Session[]>(
-    "summit-sessions",
+  const [raw, setSessions, ready] = usePersistedState<Session[]>(
+    "summit-sessions-v3",
     initialSessions
   )
-  return [raw.map(normalise), setSessions] as const
+  return [raw.map(normalise), setSessions, ready] as const
 }
 
 export const liveSession = (list: Session[]) =>
-  list.find((s) => s.status === "Live") ?? list[0]
+  list.find((x) => x.status === "Live") ?? list[0]
+
+export const startMinutes = (time: string) => {
+  const m = /(\d{1,2}):(\d{2})/.exec(time)
+  return m ? Number(m[1]) * 60 + Number(m[2]) : 0
+}
+const to12 = (hhmm: string) => {
+  const [h = 0, m = 0] = hhmm.split(":").map(Number)
+  return `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")}`
+}
+const meridiem = (hhmm: string) => (Number(hhmm.split(":")[0]) >= 12 ? "PM" : "AM")
+/** "09:05–09:55" → { start: "9:05 AM", range: "9:05 – 9:55 AM" } */
+export const formatTime = (time: string) => {
+  const [a = "", b = ""] = time.split(/[–-]/).map((x) => x.trim())
+  if (!a) return { start: "", end: "", range: "" }
+  const start = `${to12(a)} ${meridiem(a)}`
+  const end = b ? `${to12(b)} ${meridiem(b)}` : ""
+  const range = b
+    ? meridiem(a) === meridiem(b)
+      ? `${to12(a)} – ${end}`
+      : `${start} – ${end}`
+    : start
+  return { start, end, range }
+}
+
+/* ------------------------------------------------------------------ */
+/* The signed-in attendee                                              */
+/* ------------------------------------------------------------------ */
+export type Profile = {
+  name: string
+  organisation: string
+  email: string
+  consented: boolean
+}
+export const ME = "Arjun Kumar"
+export const ME_EMAIL = "arjun.kumar@iitm.ac.in"
+export function useProfile() {
+  return usePersistedState<Profile | null>("summit-profile", null)
+}
+export const canJoin = (session: Session, email = ME_EMAIL) =>
+  session.access === "Open" || !!session.invitees?.includes(email)
 
 /* ------------------------------------------------------------------ */
 /* Event media library (uploaded once, reused everywhere)              */
@@ -265,49 +308,127 @@ export const initials = (name: string) =>
     .map((p) => p[0]!.toUpperCase())
     .join("")
 
-/** Session start time in minutes, for ordering the schedule. */
-export const startMinutes = (time: string) => {
-  const m = /(\d{1,2}):(\d{2})/.exec(time)
-  return m ? Number(m[1]) * 60 + Number(m[2]) : 0
-}
-
 /* ------------------------------------------------------------------ */
-/* Live inputs (questions, ideas, opinions)                            */
+/* Inputs: ideas (Module 1) and session inputs (Module 2).             */
 /* Author names are for Coordinator/Admin views only, never attendees. */
 /* ------------------------------------------------------------------ */
 export type InputKind = "question" | "idea" | "opinion"
 export type LiveInput = {
   id: string
   kind: InputKind
+  /** Question / opinion text, or the idea title. */
   text: string
   author: string
   votes: number
   at: string
   theme?: ThemeId
+  /** Session the input came from. Ideas without one have Source "General". */
   sessionId?: string
+  proposed?: string
   problem?: string
   impact?: string
   mine?: boolean
+  /** Submitter's organisation. Coordinator / Admin only. */
+  org?: string
+  /** NFR-03: "queued" = held on the phone until the network returns. */
+  delivery?: "sent" | "queued"
 }
-export const ME = "Arjun Mehta"
 
 export const seedInputs: LiveInput[] = [
-  { id: "q1", kind: "question", text: "How can Andhra Pradesh attract more deep tech startups?", author: "Anjali Sharma", votes: 28, at: "10:14 AM" },
-  { id: "q2", kind: "question", text: "What incentives are needed for clean energy adoption?", author: "Rahul Verma", votes: 19, at: "10:15 AM" },
-  { id: "i1", kind: "idea", text: "Alumni-led innovation hubs in AP could drive impact.", author: "Suresh K", votes: 12, at: "10:16 AM", theme: "amaravati" },
-  { id: "o1", kind: "opinion", text: "Government procurement could create early markets.", author: "Priya Nair", votes: 9, at: "10:17 AM" },
-  { id: "m1", kind: "idea", text: "Smart Energy Grid", author: ME, votes: 6, at: "10:24 AM", theme: "energy", mine: true },
-  { id: "m2", kind: "question", text: "How can startups participate?", author: ME, votes: 18, at: "11:32 AM", mine: true },
-  { id: "m3", kind: "idea", text: "Green Hydrogen for AP", author: ME, votes: 11, at: "11:50 AM", theme: "energy", mine: true },
+  { id: "q1", kind: "question", text: "How can Andhra Pradesh attract more deep-tech startups?", author: "Anjali Sharma", org: "IIT Bombay", votes: 28, at: "9:14 AM", sessionId: "S1" },
+  { id: "q2", kind: "question", text: "What incentives would accelerate clean-energy adoption?", author: "Rahul Verma", org: "Tata Power", votes: 19, at: "9:18 AM", sessionId: "S1" },
+  { id: "q3", kind: "question", text: "How do we build an AI-ready workforce for the grid?", author: "Priya Nair", org: "IIT Madras", votes: 11, at: "9:21 AM", sessionId: "S1" },
+  { id: "q4", kind: "question", text: "Will the state publish open grid data that startups can build on?", author: "Meera Joshi", org: "NIT Warangal", votes: 4, at: "9:24 AM", sessionId: "S1" },
+  { id: "i1", kind: "idea", text: "Alumni-led innovation hubs", author: "Suresh K", org: "Infosys", votes: 0, at: "9:16 AM", theme: "amaravati", proposed: "Alumni-led innovation hubs in AP could connect startups with mentors and capital." },
+  { id: "i2", kind: "idea", text: "Rooftop solar marketplace for MSMEs", author: "Karthik Menon", org: "Ather Energy", votes: 0, at: "9:19 AM", theme: "energy", sessionId: "S1", proposed: "A state-backed marketplace that matches MSME rooftops with solar installers and financing." },
+  { id: "o1", kind: "opinion", text: "Government procurement could create early markets for local clean-tech.", author: "Priya Nair", org: "IIT Madras", votes: 0, at: "9:17 AM", sessionId: "S1" },
+  { id: "o2", kind: "opinion", text: "Storage, not generation, is the real bottleneck for renewables in AP.", author: "Neha Kapoor", org: "IISc Bengaluru", votes: 0, at: "9:22 AM", sessionId: "S1" },
+  { id: "o3", kind: "opinion", text: "Damn, these panels never answer the real questions about power cuts.", author: "Vikram Desai", org: "Independent", votes: 0, at: "9:25 AM", sessionId: "S1" },
+  { id: "m1", kind: "idea", text: "Affordable clean energy for rural areas", author: ME, org: "IIT Madras", votes: 0, at: "8:24 AM", theme: "energy", proposed: "Expand solar micro-grids to power rural communities and improve livelihoods.", problem: "Many rural areas face unreliable power supply, affecting education, healthcare and economic growth.", impact: "Reliable clean energy can improve quality of life, support local businesses and accelerate inclusive growth.", mine: true, delivery: "sent" },
+  { id: "m2", kind: "idea", text: "AI-driven grid demand forecasting", author: ME, org: "IIT Madras", votes: 0, at: "9:12 AM", theme: "energy", sessionId: "S1", proposed: "Use AI to forecast district-level demand so DISCOMs can plan renewable intake.", mine: true, delivery: "sent" },
+  { id: "m3", kind: "question", text: "How can startups take part in state energy pilots?", author: ME, org: "IIT Madras", votes: 6, at: "9:20 AM", sessionId: "S1", mine: true, delivery: "sent" },
 ]
 
 export const useInputs = () =>
-  usePersistedState<LiveInput[]>("summit-inputs", seedInputs)
-/** Coordinator decisions, keyed by input text: Visible / Shortlisted / Discussed / Hidden. */
-export const useInputActions = () =>
-  usePersistedState<Record<string, string>>("coordinator-input-actions", {})
+  usePersistedState<LiveInput[]>("summit-inputs-v3", seedInputs)
+
+/* ------------------------------------------------------------------ */
+/* Moderation (SES-07 / SES-09)                                        */
+/* ------------------------------------------------------------------ */
+export type InputState = {
+  visible?: boolean
+  shortlisted?: boolean
+  discussed?: boolean
+  hidden?: boolean
+  /** Coordinator reviewed a flagged input and allowed it. */
+  allowed?: boolean
+}
+export const useInputStates = () =>
+  usePersistedState<Record<string, InputState>>("input-states-v3", {
+    q1: { visible: true, shortlisted: true },
+    q2: { visible: true, shortlisted: true },
+    q3: { visible: true },
+  })
+/** Attendees only ever see these (SES-05). */
+export const visibleToRoom = (s?: InputState) => !!s?.visible && !s.hidden
+
+/** CFG-17 blocked-word list (editable by AQV in production). */
+export const BLOCKED_WORDS = ["damn", "idiot", "stupid", "crap", "bloody", "nonsense", "shut up"]
+export const isFlagged = (text: string) => {
+  const t = text.toLowerCase()
+  return BLOCKED_WORDS.some((w) => new RegExp(`\\b${w}\\b`).test(t))
+}
+
+/** Relay order of shortlisted inputs per session (SES-08). */
+export const useShortlistOrder = () =>
+  usePersistedState<Record<string, string[]>>("shortlist-order-v3", { S1: ["q1", "q2"] })
+
+/** Coordinator key discussion points per session (OUT-02). */
+export const useNotes = () =>
+  usePersistedState<Record<string, string>>("coordinator-notes-v3", {})
+
+/* ------------------------------------------------------------------ */
+/* Session outcomes (OUT-04 … OUT-06)                                  */
+/* ------------------------------------------------------------------ */
+export const OUTCOME_SECTIONS = [
+  "Session Summary",
+  "Key Discussion Themes",
+  "Key Audience Inputs",
+  "Ideas & Opportunities",
+  "Recommendations for GoAP",
+  "Action Points",
+  "Participation",
+] as const
+export type OutcomeStatus = "Draft" | "Submitted" | "Changes requested" | "Finalised"
+export type Outcome = {
+  status: OutcomeStatus
+  sections: string[]
+  source: "ai" | "manual"
+  updatedAt: number
+  submittedAt?: number
+  adminNote?: string
+}
+export const useOutcomes = () =>
+  usePersistedState<Record<string, Outcome>>("session-outcomes-v3", {})
+
+/** The signed-in coordinator for the demo. */
+export const COORDINATOR = { name: "Ravi Kumar", email: "ravi.kumar@aqv.in" }
+
 export const useUpvotes = () =>
   usePersistedState<string[]>("attendee-upvotes", [])
 
+export type SessionFeedback = { rating: number; valuable: string; suggestion: string }
+export const useFeedback = () =>
+  usePersistedState<Record<string, SessionFeedback>>("attendee-feedback", {})
+export const useSummitFeedback = () =>
+  usePersistedState<{ rating: number; best: string; suggestion: string } | null>(
+    "attendee-summit-feedback",
+    null
+  )
+
 export const clockNow = () =>
-  new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+  new Date().toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }).toUpperCase()
+
+/** OUT-03: optional transcript / notes file uploaded by an admin, per session. */
+export const useTranscripts = () =>
+  usePersistedState<Record<string, { name: string; at: number }>>("session-transcripts-v3", {})

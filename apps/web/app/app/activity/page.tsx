@@ -1,5 +1,5 @@
-import { ActivityScreen } from "@/components/modules/attendee/attendee-screens"
+import { redirect } from "next/navigation"
 
 export default function Page() {
-  return <ActivityScreen />
+  redirect("/app/submissions")
 }

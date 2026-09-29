@@ -1,5 +1,5 @@
-import { MoreScreen } from "@/components/modules/attendee/attendee-screens"
+import { redirect } from "next/navigation"
 
 export default function Page() {
-  return <MoreScreen />
+  redirect("/app/home")
 }

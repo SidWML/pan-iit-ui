@@ -1,4 +1,4 @@
-const colors = ["#f59e0b", "#7c3aed", "#2563eb", "#ec4899", "#16a34a", "#06b6d4"]
+const colors = ["#f7b500", "#0b57f5", "#7c66fc", "#12a37a", "#8fb3ff", "#ffd57a"]
 // Deterministic so server and client markup match.
 const pieces = Array.from({ length: 22 }, (_, i) => {
   const angle = (i / 22) * Math.PI * 2
