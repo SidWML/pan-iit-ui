@@ -1,5 +1,5 @@
-import { FeedbackScreen } from "@/components/modules/attendee/attendee-screens"
+import { SummitFeedbackScreen } from "@/components/modules/attendee/attendee-screens"
 
 export default function Page() {
-  return <FeedbackScreen />
+  return <SummitFeedbackScreen />
 }

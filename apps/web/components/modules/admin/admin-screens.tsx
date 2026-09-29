@@ -1,36 +1,30 @@
 "use client"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 import {
-  BarChart3,
-  CalendarDays,
   CheckCircle2,
   Download,
-  FileText,
-  Lightbulb,
   Plus,
+  QrCode,
   Search,
-  Settings,
   Sparkles,
-  Star,
   Trash2,
-  Users,
 } from "lucide-react"
-import { DesktopShell } from "@/components/shells/desktop-shell"
+import { AdminShell } from "@/components/modules/admin/admin-shell"
+import { SessionQrPanel } from "@/components/shared/session-qr"
+export { AdminDashboard, OutcomesScreen } from "@/components/modules/admin/admin-ops"
 import {
   Badge,
   Button,
   Card,
   Field,
   PageTitle,
-  Stat,
   inputStyle,
 } from "@/components/ui/primitives"
-import { SessionEditor } from "@/components/modules/admin/session-editor"
+import { SESSION_FORM_ID, SessionEditor } from "@/components/modules/admin/session-editor"
 import { MediaLibrary } from "@/components/modules/admin/media-library"
 import {
-  initialSessions,
   themeById,
+  useEventConfig,
   useSessions,
   type Session,
 } from "@/components/shared/summit-data"
@@ -38,125 +32,17 @@ import { Modal, downloadText } from "@/components/shared/modal"
 import { Toast } from "@/components/shared/toast"
 import { usePersistedState } from "@/components/shared/use-persisted-state"
 
-const nav = [
-  { label: "Dashboard", href: "/admin/dashboard", icon: BarChart3 },
-  { label: "Ideas", href: "/admin/ideas", icon: Lightbulb },
-  { label: "Sessions", href: "/admin/sessions", icon: CalendarDays },
-  { label: "Outcomes", href: "/admin/outcomes", icon: CheckCircle2 },
-  { label: "Reports", href: "/admin/reports", icon: FileText },
-  { label: "People & Roles", href: "/admin/people", icon: Users },
-  { label: "Event Settings", href: "/admin/settings", icon: Settings },
-]
-const Shell = ({ children }: { children: React.ReactNode }) => (
-  <DesktopShell role="Admin" nav={nav}>
-    {children}
-  </DesktopShell>
-)
+const Shell = AdminShell
 const tone = (s: string): "blue" | "green" | "amber" | "red" | "gray" =>
-  s.includes("Approved") || s.includes("Shortlisted")
+  s.includes("Approved") || s.includes("Shortlisted") || s.includes("Live")
     ? "green"
-    : s.includes("Live") || s.includes("New")
-      ? "red"
-      : s.includes("Review") || s.includes("needed")
+    : s.includes("Hidden") || s.includes("Closed")
+      ? "gray"
+      : s.includes("Review") || s.includes("needed") || s.includes("Paused")
         ? "amber"
         : s.includes("Draft") || s.includes("Merged")
           ? "gray"
           : "blue"
-
-export function AdminDashboard() {
-  const router = useRouter()
-  return (
-    <Shell>
-      <PageTitle
-        eyebrow="Event overview"
-        title="Welcome, Admin"
-        description="Here’s what’s happening at the summit right now."
-        action={<Badge tone="green">Event live</Badge>}
-      />
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat label="Participants" value="2,041" icon={<Users size={19} />} />
-        <Stat
-          label="Ideas"
-          value="387"
-          icon={<Lightbulb size={19} />}
-          tone="violet"
-        />
-        <Stat
-          label="Session inputs"
-          value="1,248"
-          icon={<Sparkles size={19} />}
-          tone="green"
-        />
-        <Stat
-          label="Avg. rating"
-          value="4.4"
-          icon={<Star size={19} />}
-          tone="amber"
-        />
-      </div>
-      <div className="mt-5 grid gap-5 xl:grid-cols-2">
-        <Card className="p-5">
-          <h2 className="font-bold">Needs attention</h2>
-          <div className="mt-4 divide-y">
-            {[
-              [
-                "S4 outcome waiting for approval",
-                "Ended 18 minutes ago",
-                "/admin/outcomes",
-              ],
-              [
-                "S5 has 17 flagged inputs",
-                "Needs moderation",
-                "/admin/sessions",
-              ],
-              [
-                "12 duplicate ideas detected by AI",
-                "Review suggested merges",
-                "/admin/ideas",
-              ],
-            ].map(([a, b, href]) => (
-              <div key={a} className="flex items-center gap-3 py-3">
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-red-50 text-red-600">
-                  !
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold">{a}</p>
-                  <p className="text-xs text-muted-foreground">{b}</p>
-                </div>
-                <button
-                  onClick={() => router.push(href!)}
-                  className="text-xs font-semibold text-blue-700 hover:underline"
-                >
-                  Review →
-                </button>
-              </div>
-            ))}
-          </div>
-        </Card>
-        <Card className="p-5">
-          <h2 className="font-bold">Session progress</h2>
-          <div className="mt-4 space-y-3">
-            {[
-              ["S1 · Energy in the Age of AI", "Approval needed"],
-              ["S2 · Future of Mobility", "Approved"],
-              ["S3 · AI in Governance", "Draft"],
-              ["S4 · BioValley", "Live"],
-            ].map(([a, b]) => (
-              <button
-                onClick={() => router.push("/admin/outcomes")}
-                className="flex w-full items-center justify-between gap-3 rounded-lg p-1 text-left text-sm hover:bg-slate-50"
-                key={a}
-              >
-                <span>{a}</span>
-                <Badge tone={tone(b!)}>{b}</Badge>
-              </button>
-            ))}
-          </div>
-        </Card>
-      </div>
-    </Shell>
-  )
-}
 
 type Idea = {
   id: number
@@ -387,6 +273,20 @@ export function IdeasScreen() {
 export function SessionsAdmin() {
   const [sessions, setSessions] = useSessions()
   const [editing, setEditing] = useState<Session | null>(null)
+  const [qrFor, setQrFor] = useState<Session | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  // Deep link: /admin/sessions?edit=S1 opens that session's drawer.
+  const [deepLinked, setDeepLinked] = useState(false)
+  useEffect(() => {
+    if (deepLinked || !sessions.length) return
+    const id = new URLSearchParams(window.location.search).get("edit")
+    const target = sessions.find((x) => x.id === id)
+    const t = window.setTimeout(() => {
+      setDeepLinked(true)
+      if (target) setEditing(target)
+    }, 0)
+    return () => window.clearTimeout(t)
+  }, [deepLinked, sessions])
   const [toast, setToast] = useState("")
   const save = (data: Session) => {
     setSessions((list) =>
@@ -409,11 +309,14 @@ export function SessionsAdmin() {
             onClick={() =>
               setEditing({
                 id: "",
+                type: "Panel",
                 title: "",
                 time: "",
                 venue: "Main Hall",
                 status: "Upcoming",
-                theme: "deeptech",
+                theme: "other",
+                access: "Open",
+                feedback: true,
                 cover: "auto",
                 speakers: [],
               })
@@ -424,153 +327,144 @@ export function SessionsAdmin() {
           </Button>
         }
       />
-      <div className="grid gap-3">
-        {sessions.map((x) => {
-          const t = themeById(x.theme)
-          return (
-            <Card key={x.id} className="flex flex-wrap items-center gap-4 p-4">
-              <span
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white"
-                style={{ background: t.gradient }}
-              >
-                <t.icon size={20} />
-              </span>
-              <div className="min-w-[220px] flex-1">
-                <h3 className="font-bold">{x.title}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {t.label} · {x.time} · {x.venue}
-                  {x.speakers.length > 0 &&
-                    ` · ${x.speakers.length} speaker${x.speakers.length > 1 ? "s" : ""}`}
-                </p>
-              </div>
-              <Badge tone={tone(x.status)}>{x.status}</Badge>
-              <Button onClick={() => setEditing(x)} variant="secondary">
-                Manage
-              </Button>
-            </Card>
-          )
-        })}
-      </div>
-      <Modal
-        wide
-        open={!!editing}
-        onClose={() => setEditing(null)}
-        title={editing?.id ? "Manage session" : "Add session"}
-        description="The preview shows exactly what attendees will see."
-      >
-        {editing && (
-          <SessionEditor
-            session={editing}
-            onSave={save}
-            onClose={() => setEditing(null)}
-            onDelete={() => {
-              setSessions((x) => x.filter((s) => s.id !== editing.id))
-              setEditing(null)
-            }}
-          />
-        )}
-      </Modal>
-      <Toast message={toast} />
-    </Shell>
-  )
-}
-
-type Outcome = {
-  id: string
-  title: string
-  coordinator: string
-  status: string
-  summary: string
-}
-const initialOutcomes: Outcome[] = initialSessions.map((x, i) => ({
-  id: x.id,
-  title: x.title,
-  coordinator: ["Ravi Kumar", "Nisha Rao", "Kiran Reddy", "Meera Jain"][i]!,
-  status: i === 0 ? "Review needed" : i === 1 ? "Approved" : "Draft",
-  summary:
-    "The session identified practical opportunities, stakeholder priorities, and recommended next steps for Andhra Pradesh.",
-}))
-export function OutcomesScreen() {
-  const [items, setItems] = usePersistedState(
-    "summit-outcomes",
-    initialOutcomes
-  )
-  const [selected, setSelected] = useState<Outcome | null>(null)
-  return (
-    <Shell>
-      <PageTitle
-        eyebrow="Approval workflow"
-        title="Session outcomes"
-        description="Only approved outcomes are included in summit reports."
-      />
       <Card className="overflow-hidden">
-        <div className="divide-y">
-          {items.map((x) => (
-            <div key={x.id} className="flex flex-wrap items-center gap-4 p-5">
-              <div className="min-w-[220px] flex-1">
-                <h3 className="font-bold">{x.title}</h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Coordinator: {x.coordinator}
-                </p>
-              </div>
-              <Badge tone={tone(x.status)}>{x.status}</Badge>
-              <Button
-                onClick={() => setSelected(x)}
-                variant={x.status === "Review needed" ? "primary" : "secondary"}
-              >
-                {x.status === "Review needed" ? "Review outcome" : "View"}
-              </Button>
-            </div>
-          ))}
+        <div className="overflow-x-auto">
+          <table className="w-full md:min-w-[760px] text-left text-[13px]">
+            <thead className="text-[11.5px] text-[#6b7690]">
+              <tr className="border-b border-[#eef1f6]">
+                <th className="px-4 py-2.5 font-medium">Session</th>
+                <th className="hidden px-2 py-2.5 font-medium sm:table-cell">Time</th>
+                <th className="hidden px-2 py-2.5 font-medium lg:table-cell">Venue</th>
+                <th className="hidden px-2 py-2.5 font-medium md:table-cell">Coordinator</th>
+                <th className="hidden px-2 py-2.5 font-medium md:table-cell">Access</th>
+                <th className="px-2 py-2.5 font-medium">Status</th>
+                <th className="px-4 py-2.5" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#f1f3f8]">
+              {[...sessions]
+                .sort((a, b) => a.time.localeCompare(b.time))
+                .map((x) => {
+                  const t = themeById(x.theme)
+                  return (
+                    <tr key={x.id} className="hover:bg-[#fafbfd]">
+                      <td className="px-4 py-2.5">
+                        <span className="flex items-center gap-2.5">
+                          <span
+                            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-white"
+                            style={{ background: t.accent }}
+                          >
+                            <t.icon size={15} />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block font-medium text-[#0f1e4d]">{x.title}</span>
+                            <span className="text-[12px] text-[#8a93ab]">
+                              <span className="num sm:hidden">{x.time} · </span>
+                              {x.type} · {t.label}
+                              {x.speakers.length > 0 &&
+                                ` · ${x.speakers.length} speaker${x.speakers.length > 1 ? "s" : ""}`}
+                            </span>
+                          </span>
+                        </span>
+                      </td>
+                      <td className="num hidden px-2 py-2.5 whitespace-nowrap text-[#44506e] sm:table-cell">{x.time}</td>
+                      <td className="hidden px-2 py-2.5 text-[#44506e] lg:table-cell">{x.venue}</td>
+                      <td className="hidden px-2 py-2.5 whitespace-nowrap md:table-cell">
+                        {x.coordinator ? (
+                          <span className="text-[#44506e]">{x.coordinator}</span>
+                        ) : (
+                          <span className="text-[#c62828]">Unassigned</span>
+                        )}
+                      </td>
+                      <td className="hidden px-2 py-2.5 md:table-cell">
+                        <Badge tone={x.access === "Invited" ? "violet" : "gray"} dot={false}>
+                          {x.access === "Invited" ? "Invited" : "Open"}
+                        </Badge>
+                      </td>
+                      <td className="px-2 py-2.5">
+                        <Badge tone={tone(x.status)}>{x.status}</Badge>
+                      </td>
+                      <td className="py-2.5 pr-3 pl-1 sm:px-4">
+                        <span className="flex justify-end gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="max-sm:hidden"
+                            onClick={() => setQrFor(x)}
+                            aria-label={`QR code for ${x.title}`}
+                          >
+                            <QrCode size={14} /> <span className="hidden sm:inline">QR</span>
+                          </Button>
+                          <Button size="sm" variant="secondary" onClick={() => setEditing(x)}>
+                            Manage
+                          </Button>
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+            </tbody>
+          </table>
         </div>
       </Card>
       <Modal
-        open={!!selected}
-        onClose={() => setSelected(null)}
-        title={selected?.title ?? "Outcome"}
-        description={`Prepared by ${selected?.coordinator ?? ""}`}
+        open={!!qrFor}
+        onClose={() => setQrFor(null)}
+        title="Session QR code"
+        description={qrFor?.title}
       >
-        <textarea
-          className={`${inputStyle} min-h-44 py-3`}
-          value={selected?.summary ?? ""}
-          onChange={(e) =>
-            setSelected((x) => (x ? { ...x, summary: e.target.value } : x))
-          }
-        />
-        <div className="mt-4 flex justify-end gap-2">
-          <Button
-            variant="secondary"
-            onClick={() => {
-              if (selected)
-                setItems((list) =>
-                  list.map((x) =>
-                    x.id === selected.id
-                      ? { ...selected, status: "Changes requested" }
-                      : x
-                  )
-                )
-              setSelected(null)
-            }}
-          >
-            Request changes
-          </Button>
-          <Button
-            onClick={() => {
-              if (selected)
-                setItems((list) =>
-                  list.map((x) =>
-                    x.id === selected.id
-                      ? { ...selected, status: "Approved" }
-                      : x
-                  )
-                )
-              setSelected(null)
-            }}
-          >
-            Approve outcome
-          </Button>
-        </div>
+        {qrFor && <SessionQrPanel session={qrFor} />}
       </Modal>
+      <Modal
+        wide
+        open={!!editing}
+        onClose={() => {
+          setEditing(null)
+          setConfirmDelete(false)
+        }}
+        side
+        title={editing?.id ? editing.title : "Add session"}
+        description={editing?.id ? `${editing.type} · ${editing.time}` : "Fill in the basics. Everything else is optional."}
+        footer={
+          editing && (
+            <>
+              {editing.id &&
+                (confirmDelete ? (
+                  <span className="mr-auto flex items-center gap-2 text-[13px] text-[#c62828]">
+                    Delete this session?
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => {
+                        setSessions((x) => x.filter((s) => s.id !== editing.id))
+                        setEditing(null)
+                        setConfirmDelete(false)
+                      }}
+                    >
+                      Yes, delete
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(false)}>
+                      Keep
+                    </Button>
+                  </span>
+                ) : (
+                  <Button variant="ghost" className="mr-auto text-[#c62828]" onClick={() => setConfirmDelete(true)}>
+                    <Trash2 size={15} /> Delete
+                  </Button>
+                ))}
+              <Button variant="secondary" onClick={() => setEditing(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" form={SESSION_FORM_ID}>
+                {editing.id ? "Save changes" : "Add session"}
+              </Button>
+            </>
+          )
+        }
+      >
+        {editing && <SessionEditor key={editing.id || "new"} session={editing} onSave={save} />}
+      </Modal>
+      <Toast message={toast} />
     </Shell>
   )
 }
@@ -894,6 +788,8 @@ export function SettingsScreen() {
             </form>
           ) : active === "Media" ? (
             <MediaLibrary />
+          ) : active === "Access" || active === "Participation" ? (
+            <ConfigToggles section={active} />
           ) : (
             <div className="mt-5 rounded-lg border border-dashed p-6">
               <p className="text-sm text-muted-foreground">
@@ -918,5 +814,52 @@ export function SettingsScreen() {
       </div>
       <Toast message={toast} />
     </Shell>
+  )
+}
+
+function ConfigToggles({ section }: { section: "Access" | "Participation" }) {
+  const [config, setConfig] = useEventConfig()
+  const logins = Object.values(config.login).filter(Boolean).length
+  const rows: [string, string, boolean, (v: boolean) => void, boolean?][] =
+    section === "Access"
+      ? [
+          ["Google Sign-In", "Primary login (ACC-01)", config.login.google, (v) => setConfig((c) => ({ ...c, login: { ...c.login, google: v } }))],
+          ["Email login link", "For attendees without Google (ACC-02)", config.login.email, (v) => setConfig((c) => ({ ...c, login: { ...c.login, email: v } }))],
+          ["Mobile + OTP", "Turn on only with a DLT-approved SMS route (ACC-03)", config.login.otp, (v) => setConfig((c) => ({ ...c, login: { ...c.login, otp: v } }))],
+        ]
+      : [
+          ["Idea window open", `Attendees can submit and edit ideas · closes ${config.ideaWindowCloses} (CFG-12)`, config.ideaWindowOpen, (v) => setConfig((c) => ({ ...c, ideaWindowOpen: v }))],
+          ["Summit feedback open", `Opens at the Valedictory, ${config.summitFeedbackOpens} (CFG-18)`, config.summitFeedbackOpen, (v) => setConfig((c) => ({ ...c, summitFeedbackOpen: v }))],
+          ["Questions", "Session input type (CFG-14)", config.inputTypes.question, (v) => setConfig((c) => ({ ...c, inputTypes: { ...c.inputTypes, question: v } }))],
+          ["Ideas in sessions", "Session input type (CFG-14)", config.inputTypes.idea, (v) => setConfig((c) => ({ ...c, inputTypes: { ...c.inputTypes, idea: v } }))],
+          ["Opinions", "Session input type (CFG-14)", config.inputTypes.opinion, (v) => setConfig((c) => ({ ...c, inputTypes: { ...c.inputTypes, opinion: v } }))],
+        ]
+  return (
+    <div className="mt-5 divide-y rounded-lg border">
+      {rows.map(([label, help, on, set]) => {
+        // CFG-03: at least one login method must always stay on.
+        const locked = section === "Access" && on && logins === 1
+        return (
+          <label
+            key={label}
+            className="flex items-center justify-between gap-4 p-4 text-sm"
+          >
+            <span>
+              <span className="block font-semibold">{label}</span>
+              <span className="text-xs text-muted-foreground">
+                {locked ? "At least one login method must stay on." : help}
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              checked={on}
+              disabled={locked}
+              onChange={(e) => set(e.target.checked)}
+              className="h-5 w-5 accent-[#0b57f5]"
+            />
+          </label>
+        )
+      })}
+    </div>
   )
 }
