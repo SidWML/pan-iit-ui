@@ -4,7 +4,7 @@ import {
   Cpu,
   Dna,
   Landmark,
-  MoreHorizontal,
+  Layers,
   Rocket,
   Sprout,
   Users,
@@ -60,7 +60,7 @@ export const themes: Theme[] = [
   theme("governance", "Governance", "AI in Governance", Landmark, "#d92d2d", "#fdecec"),
   theme("skilling", "Skilling", "Skilling & Entrepreneurship", Users, "#0e9fbf", "#e2f6fa"),
   theme("amaravati", "Amaravati", "Amaravati Capital City", Building2, "#8155f0", "#f2ecfe"),
-  theme("other", "Other", "Other / Cross-cutting", MoreHorizontal, "#7d86a3", "#f1f3f8"),
+  theme("other", "Cross-cutting", "Other / Cross-cutting", Layers, "#c2255c", "#fdeaf1"),
 ]
 
 export const themeById = (id?: string): Theme =>
@@ -432,3 +432,61 @@ export const clockNow = () =>
 /** OUT-03: optional transcript / notes file uploaded by an admin, per session. */
 export const useTranscripts = () =>
   usePersistedState<Record<string, { name: string; at: number }>>("session-transcripts-v3", {})
+
+/** Old links used named IDs (e.g. /sessions/energy-ai); map them to codes. */
+const LEGACY_IDS: Record<string, string> = { "energy-ai": "s1" }
+export const matchesSessionId = (session: Session, id: string) => {
+  const want = String(id).toLowerCase()
+  return session.id.toLowerCase() === (LEGACY_IDS[want] ?? want)
+}
+
+/* ------------------------------------------------------------------ */
+/* Admin: idea moderation (IDE-06), reports (RPT-04…07), people (CFG-06) */
+/* ------------------------------------------------------------------ */
+export type IdeaStatus = "New" | "Shortlisted" | "Hidden"
+export const useIdeaStatus = () =>
+  usePersistedState<Record<string, IdeaStatus>>("idea-status-v1", {})
+
+export type ReportKind = "Consolidated" | "Theme-wise Ideas" | "Session Outcomes"
+export type ReportStatus = "Draft" | "Reviewed" | "Approved"
+export type ReportVersion = {
+  id: string
+  kind: ReportKind
+  type: "Interim" | "Final"
+  version: number
+  generatedAt: number
+  status: ReportStatus
+  approvedBy?: string
+  /** What was included at generation time (RPT-06). */
+  snapshot: { outcomes: number; sessions: number; ideas: number; inputs: number; pending: string[] }
+  body: string
+}
+export const useReports = () => usePersistedState<ReportVersion[]>("reports-v1", [])
+
+export type Role = "Attendee" | "Coordinator" | "Admin" | "Round Table invitee"
+export type Person = { id: string; name: string; email: string; roles: Role[]; approver?: boolean }
+export const seedPeople: Person[] = [
+  { id: "p1", name: "Anita Menon", email: "anita.menon@aqv.in", roles: ["Admin"], approver: true },
+  { id: "p2", name: "Ravi Kumar", email: "ravi.kumar@aqv.in", roles: ["Coordinator"] },
+  { id: "p3", name: "Priya Nair", email: "priya.nair@iitm.ac.in", roles: ["Attendee", "Round Table invitee"] },
+  { id: "p4", name: "Arjun Kumar", email: "arjun.kumar@iitm.ac.in", roles: ["Attendee"] },
+  { id: "p5", name: "Sunil Rao", email: "sunil.rao@paniit.org", roles: ["Admin", "Coordinator"] },
+]
+export const usePeople = () => usePersistedState<Person[]>("people-v1", seedPeople)
+
+/** CFG-20 prompt templates (Annexure B), editable and versioned. */
+export const usePrompts = () =>
+  usePersistedState<Record<string, { text: string; version: number; savedAt?: number }>>("prompts-v1", {
+    "Session Outcome (B1)": {
+      version: 1,
+      text: "You are the official rapporteur of the PAN IIT Amaravati Summit 2026. Prepare the outcome of one session for submission to the Chief Minister's Office, Government of Andhra Pradesh.\n\nSession: {session_title} · Type: {session_type} · Theme: {theme} · Speakers: {speakers}\n\nInputs — (A) Coordinator notes: {coordinator_notes} · (B) Transcript: {transcript} · (C) Audience inputs: {audience_inputs} · (D) Feedback: {feedback_stats}\n\nRules: use only the inputs above; never name audience members; keep speaker views separate from audience views; formal, neutral government English.\n\nOutput — max 600 words: Session Summary · Key Discussion Themes · Key Audience Inputs · Ideas & Opportunities · Recommendations for GoAP · Action Points · Participation.",
+    },
+    "Theme-wise Ideas Summary (B2)": {
+      version: 1,
+      text: "Summarise the attendee ideas submitted under the theme \"{theme}\" for the Chief Minister's Office. Ideas: {ideas}\n\nRules: use only these ideas; group into at most 5 sub-themes with counts; never name individuals; add no facts or figures.\n\nOutput — max 400 words: Overview · Sub-themes · Notable Ideas · Recommended Next Steps.",
+    },
+    "Consolidated Report (B3)": {
+      version: 1,
+      text: "Prepare the Consolidated Outcomes Report of the PAN IIT Amaravati Summit 2026 for the Chief Minister's Office, GoAP. Inputs: approved session outcomes {session_outcomes}; approved theme summaries {idea_summaries}; statistics {stats}. Report type: {Interim | Final}, generated as of {timestamp}.\n\nOutput — max 1,200 words: Executive Summary · Participation at a Glance · Cross-cutting Themes · Theme-wise Highlights · Priority Recommendations for GoAP · Next Steps & Follow-up.",
+    },
+  })

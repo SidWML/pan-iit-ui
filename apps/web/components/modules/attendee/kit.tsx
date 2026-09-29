@@ -26,10 +26,17 @@ import {
 /* ---------------------------------------------------------------- */
 /* Brand                                                             */
 /* ---------------------------------------------------------------- */
-export function SkylineMark({ className = "h-9 w-12" }: { className?: string }) {
+export function SkylineMark({
+  className = "h-9 w-12",
+  light = false,
+}: {
+  className?: string
+  /** White version for dark backgrounds. */
+  light?: boolean
+}) {
   return (
     <svg viewBox="0 0 48 36" className={className} aria-hidden>
-      <g fill="#13266b">
+      <g fill={light ? "#ffffff" : "#13266b"}>
         <rect x="1" y="20" width="5" height="14" rx=".6" />
         <rect x="7" y="14" width="5" height="20" rx=".6" />
         <rect x="13" y="22" width="4" height="12" rx=".6" />
@@ -40,13 +47,13 @@ export function SkylineMark({ className = "h-9 w-12" }: { className?: string }) 
         <rect x="37" y="19" width="4" height="15" rx=".6" />
         <rect x="42" y="24" width="5" height="10" rx=".6" />
       </g>
-      <g fill="#3f7bff">
+      <g fill={light ? "#8fb3ff" : "#3f7bff"}>
         <rect x="8.5" y="17" width="2" height="2" />
         <rect x="19.8" y="12" width="2.4" height="2" />
         <rect x="19.8" y="17" width="2.4" height="2" />
         <rect x="32.5" y="15" width="2" height="2" />
       </g>
-      <rect x="0" y="34" width="48" height="1.6" rx=".8" fill="#13266b" />
+      <rect x="0" y="34" width="48" height="1.6" rx=".8" fill={light ? "#ffffff" : "#13266b"} />
     </svg>
   )
 }

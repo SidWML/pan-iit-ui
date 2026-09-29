@@ -3,6 +3,9 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, type ReactNode } from "react"
 import {
+  Users,
+  MapPin,
+  CalendarDays,
   ArrowRight,
   Building2,
   ChevronRight,
@@ -31,6 +34,7 @@ import {
   useEventConfig,
   useProfile,
   useSessions,
+  matchesSessionId,
 } from "@/components/shared/summit-data"
 
 const NEXT_KEY = "summit-next"
@@ -63,6 +67,48 @@ function useFinishLogin() {
   }
 }
 
+/** Desktop only: brand panel on the left of every auth screen. */
+function BrandPanel() {
+  return (
+    <aside className="sunrise relative hidden min-h-svh flex-col overflow-hidden lg:flex">
+      <div className="relative z-10 px-12 pt-10 xl:px-16">
+        <Logo />
+        <h1 className="font-display mt-14 max-w-[540px] text-[46px] leading-[1.05] text-[#0f1e4d] xl:text-[54px]">
+          Ideas today for a brighter Andhra tomorrow.
+        </h1>
+        <span className="mt-5 block h-1 w-14 rounded-full bg-[#f5a300]" />
+        <p className="mt-5 max-w-[460px] text-[17px] leading-relaxed text-[#44506e]">
+          Share ideas, join live sessions and help shape the Summit&apos;s recommendations to the
+          Government of Andhra Pradesh.
+        </p>
+        <div className="mt-7 flex flex-wrap gap-2 text-[13.5px] font-medium text-[#1d2a4d]">
+          {[
+            [CalendarDays, "Sat 3 Oct 2026"],
+            [MapPin, "Dr. Ambedkar Kalavedika, Vijayawada"],
+            [Users, "≈ 2,000 attendees"],
+          ].map(([Icon, label]) => {
+            const I = Icon as typeof Users
+            return (
+              <span
+                key={label as string}
+                className="inline-flex items-center gap-1.5 rounded-full bg-white/75 px-3 py-1.5 ring-1 ring-white"
+              >
+                <I size={15} className="text-[#0b57f5]" /> {label as string}
+              </span>
+            )
+          })}
+        </div>
+      </div>
+      <Illus name="skyline-hero" priority className="absolute inset-x-0 bottom-0 w-full" />
+    </aside>
+  )
+}
+
+const authGrid =
+  "min-h-svh bg-[#e9edf5] lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(480px,1fr)] lg:bg-[#f6f8fd]"
+const authCard =
+  "lg:w-full lg:max-w-[440px] lg:rounded-2xl lg:border lg:border-[#e6eaf2] lg:bg-white lg:p-9 lg:shadow-[0_1px_2px_rgba(15,30,77,.05)]"
+
 function AuthFrame({
   children,
   back,
@@ -73,18 +119,21 @@ function AuthFrame({
   skyline?: boolean
 }) {
   return (
-    <div className="min-h-svh bg-[#e9edf5]">
-      <div className="sunrise relative mx-auto flex min-h-svh max-w-md flex-col overflow-hidden px-6 pt-4 pb-40">
-        {back && <BackButton />}
-        <div className="mt-2">
-          <Logo />
+    <div className={authGrid}>
+      <BrandPanel />
+      <div className="sunrise-until-lg relative mx-auto flex min-h-svh w-full max-w-md flex-col overflow-hidden px-6 pt-4 pb-40 lg:max-w-none lg:items-center lg:justify-center lg:px-12 lg:py-12">
+        <div className={`flex flex-1 flex-col lg:flex-none ${authCard}`}>
+          {back && <BackButton />}
+          <div className="mt-2 lg:hidden">
+            <Logo />
+          </div>
+          <div className="relative z-10 mt-8 flex-1 lg:mt-2">{children}</div>
         </div>
-        <div className="relative z-10 mt-8 flex-1">{children}</div>
         {skyline && (
           <Illus
             name="skyline-soft"
             priority
-            className="absolute inset-x-0 bottom-0 w-full opacity-80"
+            className="absolute inset-x-0 bottom-0 w-full opacity-80 lg:hidden"
           />
         )}
       </div>
@@ -184,9 +233,10 @@ function LoginOptions() {
 /* ---------------------------------------------------------------- */
 export function LoginScreen() {
   return (
-    <div className="min-h-svh bg-[#e9edf5]">
-      <div className="sunrise relative mx-auto flex min-h-svh max-w-md flex-col overflow-hidden">
-        <div className="px-6 pt-6">
+    <div className={authGrid}>
+      <BrandPanel />
+      <div className="sunrise-until-lg relative mx-auto flex min-h-svh w-full max-w-md flex-col overflow-hidden lg:max-w-none lg:items-center lg:justify-center lg:px-12 lg:py-12">
+        <div className="px-6 pt-6 lg:hidden">
           <Logo />
           <h1 className="font-display mt-10 text-[34px] leading-[1.08] text-[#0f1e4d]">
             A Brighter
@@ -199,9 +249,22 @@ export function LoginScreen() {
             Shape real impact.
           </p>
         </div>
-        <Illus name="skyline-hero" priority className="mt-4 w-full" />
-        <div className="relative z-10 -mt-8 flex-1 rounded-t-[28px] bg-white px-6 pt-7 pb-6 shadow-[0_-12px_40px_rgba(15,30,77,.08)]">
+        <Illus name="skyline-hero" priority className="mt-4 w-full lg:hidden" />
+        <div
+          className={`relative z-10 -mt-8 flex-1 rounded-t-[28px] bg-white px-6 pt-7 pb-6 shadow-[0_-12px_40px_rgba(15,30,77,.08)] lg:mt-0 lg:flex-none ${authCard}`}
+        >
+          <div className="mb-6 hidden lg:block">
+            <h2 className="text-[26px] font-bold tracking-tight text-[#0f1e4d]">Welcome</h2>
+            <p className="mt-1 text-[15px] text-[#5e6a85]">
+              Sign in to take part in the PAN IIT Amaravati Summit 2026.
+            </p>
+          </div>
           <LoginOptions />
+          <p className="mt-5 hidden items-start gap-2 rounded-xl bg-[#f3f6fc] p-3 text-[13px] leading-snug text-[#44506e] lg:flex">
+            <Info size={16} className="mt-px shrink-0 text-[#0b57f5]" />
+            Attendees, coordinators and admins all sign in here. Your role comes from the Summit
+            team&apos;s list.
+          </p>
           <div className="mt-6 border-t border-[#eef1f6] pt-4 text-center text-[12px] text-[#8a93ab]">
             Demo · open as{" "}
             <Link href="/coordinator/sessions" className="font-semibold text-[#44506e]">
@@ -564,7 +627,7 @@ export function QrLandingScreen({ id }: { id: string }) {
   const router = useRouter()
   const [sessions, , ready] = useSessions()
   const [profile] = useProfile()
-  const session = sessions.find((s) => s.id.toLowerCase() === id.toLowerCase())
+  const session = sessions.find((s) => matchesSessionId(s, id))
   const target = `/app/sessions/${session?.id ?? id}`
   useEffect(() => {
     safeSet(NEXT_KEY, target)

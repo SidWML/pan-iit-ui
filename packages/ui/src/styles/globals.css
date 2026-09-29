@@ -175,3 +175,8 @@ body {
 @keyframes drawer-in { from { transform: translateX(100%) } to { transform: translateX(0) } }
 @keyframes row-in { from { background-color: #eef3ff } to { background-color: transparent } }
 @media (prefers-reduced-motion: reduce) { .drawer-in,.row-in { animation: none } }
+
+/* Auth screens: sunrise wash on phones; desktop uses the brand panel instead */
+@media (max-width: 1023px) {
+  .sunrise-until-lg { background: radial-gradient(120% 70% at 70% 0%, #ffe4b8 0%, rgba(255,228,184,0) 60%), linear-gradient(180deg, #fdebd3 0%, #f1e8f7 45%, #eaf0ff 80%, #f6f8fd 100%); }
+}

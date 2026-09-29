@@ -24,7 +24,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     { label: "Event Settings", href: "/admin/settings", icon: Settings },
   ]
   return (
-    <DesktopShell role="Admin" nav={nav}>
+    <DesktopShell role="Admin" nav={nav} fullBleed>
       {children}
     </DesktopShell>
   )

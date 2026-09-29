@@ -70,20 +70,20 @@ export function DesktopShell({
 
   const navigation = (mini: boolean) => (
     <>
-      <div className={`flex h-14 shrink-0 items-center border-b border-[#eef1f6] ${mini ? "justify-center" : "px-4"}`}>
-        <Link href={nav[0]?.href ?? "/"} className="flex items-center gap-2.5 text-[#0f1e4d]">
-          <SkylineMark className="h-7 w-9 shrink-0" />
+      <div className={`flex h-14 shrink-0 items-center border-b border-white/10 ${mini ? "justify-center" : "px-4"}`}>
+        <Link href={nav[0]?.href ?? "/"} className="flex items-center gap-2.5 text-white">
+          <SkylineMark light className="h-7 w-9 shrink-0" />
           {!mini && (
             <span className="leading-tight">
               <strong className="block text-[14px] font-semibold">PAN IIT</strong>
-              <span className="block text-[11.5px] text-[#5e6a85]">Amaravati Summit 2026</span>
+              <span className="block text-[11.5px] text-blue-100/70">Amaravati Summit 2026</span>
             </span>
           )}
         </Link>
       </div>
       <nav className="flex-1 space-y-0.5 overflow-y-auto p-2.5">
         {!mini && (
-          <p className="px-2.5 pt-1.5 pb-2 text-[11px] font-semibold tracking-wider text-[#8a93ab] uppercase">
+          <p className="px-2.5 pt-1.5 pb-2 text-[11px] font-semibold tracking-wider text-blue-100/45 uppercase">
             {role}
           </p>
         )}
@@ -96,13 +96,13 @@ export function DesktopShell({
               href={href}
               title={mini ? label : undefined}
               aria-current={active ? "page" : undefined}
-              className={`relative flex h-9 items-center gap-2.5 rounded-lg text-[13.5px] transition-colors ${mini ? "justify-center" : "px-2.5"} ${active ? "bg-[#eef3ff] font-medium text-[#0b57f5]" : "text-[#44506e] hover:bg-[#f4f6fa] hover:text-[#0f1e4d]"}`}
+              className={`relative flex h-9 items-center gap-2.5 rounded-lg text-[13.5px] transition-colors ${mini ? "justify-center" : "px-2.5"} ${active ? "bg-white/12 font-semibold text-white" : "text-blue-100/75 hover:bg-white/7 hover:text-white"}`}
             >
               <Icon size={17} strokeWidth={active ? 2.2 : 1.8} />
               {!mini && <span className="flex-1 truncate">{label}</span>}
               {!!badge && (
                 <span
-                  className={`num rounded-full bg-[#0b57f5] text-[11px] font-semibold text-white ${mini ? "absolute top-1 right-1 h-2 w-2" : "px-1.5 leading-5"}`}
+                  className={`num rounded-full bg-[#ffb020] text-[11px] font-semibold text-[#0f1e4d] ${mini ? "absolute top-1 right-1 h-2 w-2" : "px-1.5 leading-5"}`}
                 >
                   {!mini && badge}
                 </span>
@@ -112,36 +112,18 @@ export function DesktopShell({
         })}
         {sidebarExtra?.(mini)}
       </nav>
-      <div className={`border-t border-[#eef1f6] p-2.5 ${mini ? "grid justify-center gap-1" : "flex items-center gap-2.5"}`}>
-        <span
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#e3ecff] text-[12px] font-semibold text-[#0b57f5]"
-          title={mini ? user.name : undefined}
-        >
-          {initials(user.name)}
-        </span>
-        {!mini && (
-          <span className="min-w-0 flex-1 leading-tight">
-            <span className="block truncate text-[13px] font-medium text-[#0f1e4d]">{user.name}</span>
-            <span className="block truncate text-[11.5px] text-[#6b7690]">{user.sub}</span>
-          </span>
-        )}
-        <Link
-          href="/login"
-          title="Sign out"
-          aria-label="Sign out"
-          className="grid h-8 w-8 place-items-center rounded-md text-[#5e6a85] hover:bg-[#fdefef] hover:text-[#c62828]"
-        >
-          <LogOut size={16} />
-        </Link>
-      </div>
     </>
   )
 
   return (
     <div
-      className={`min-h-svh bg-[#f6f7fb] lg:grid ${collapsed ? "lg:grid-cols-[64px_minmax(0,1fr)]" : "lg:grid-cols-[240px_minmax(0,1fr)]"}`}
+      className={`min-h-svh lg:grid ${collapsed ? "lg:grid-cols-[64px_minmax(0,1fr)]" : "lg:grid-cols-[240px_minmax(0,1fr)]"}`}
+      style={{
+        background:
+          "radial-gradient(900px 360px at 85% -8%, #e4ecff 0%, rgba(228,236,255,0) 60%), radial-gradient(700px 300px at 20% -10%, #fff1dc 0%, rgba(255,241,220,0) 55%), #f3f5fa",
+      }}
     >
-      <aside className="sticky top-0 hidden h-svh flex-col border-r border-[#e6eaf2] bg-white lg:flex">
+      <aside className="sticky top-0 hidden h-svh flex-col bg-gradient-to-b from-[#071f46] via-[#0a315f] to-[#071b3b] text-white lg:flex">
         {navigation(collapsed)}
       </aside>
       {mobileOpen && (
@@ -150,12 +132,12 @@ export function DesktopShell({
           onClick={() => setMobileOpen(false)}
         >
           <aside
-            className="relative flex h-full w-[272px] flex-col bg-white shadow-2xl"
+            className="relative flex h-full w-[272px] flex-col bg-gradient-to-b from-[#071f46] via-[#0a315f] to-[#071b3b] text-white shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setMobileOpen(false)}
-              className="absolute top-3 right-3 grid h-8 w-8 place-items-center rounded-md hover:bg-[#f1f4f9]"
+              className="absolute top-3 right-3 grid h-8 w-8 place-items-center rounded-md text-white hover:bg-white/10"
               aria-label="Close menu"
             >
               <X size={18} />

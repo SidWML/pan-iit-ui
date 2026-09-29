@@ -65,6 +65,7 @@ import {
   type LiveInput,
   type Session,
   type ThemeId,
+  matchesSessionId,
 } from "@/components/shared/summit-data"
 
 const sessionHref = (s: Session) => `/app/sessions/${s.id}`
@@ -603,7 +604,7 @@ const kinds: Record<
     help: "What's your view on the discussion?",
     button: "Submit Opinion",
     icon: MessageCircle,
-    color: { from: "#2cc493", to: "#12a37a", soft: "#e4f7ef" },
+    color: { from: "#a58bff", to: "#7c5cfa", soft: "#f1ecff" },
   },
 }
 
@@ -611,7 +612,7 @@ export function LiveSession() {
   const { id } = useParams<{ id: string }>()
   const [sessions, , ready] = useSessions()
   const session = sessions.find(
-    (s) => s.id.toLowerCase() === String(id).toLowerCase()
+    (s) => matchesSessionId(s, id)
   )
   if (!session)
     return (
@@ -1206,7 +1207,7 @@ export function MySubmissions() {
               return (
                 <div key={i.id} className="card-soft flex items-start gap-3 p-4">
                   <span
-                    className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${i.kind === "question" ? "bg-[#eef4ff] text-[#0b57f5]" : "bg-[#e6f6ef] text-[#12a37a]"}`}
+                    className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${i.kind === "question" ? "bg-[#eef4ff] text-[#0b57f5]" : "bg-[#f1ecff] text-[#7c5cfa]"}`}
                   >
                     <I size={19} />
                   </span>

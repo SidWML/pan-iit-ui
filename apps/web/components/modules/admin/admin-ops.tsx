@@ -2,6 +2,9 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import {
+  Sparkles,
+  PenLine,
+  Clock3,
   AlertTriangle,
   CalendarDays,
   Check,
@@ -15,13 +18,13 @@ import {
   UserX,
 } from "lucide-react"
 import { AdminShell } from "@/components/modules/admin/admin-shell"
+import { KpiTile, OpsBody, OpsHeader } from "@/components/ui/ops-kit"
+import { Illus } from "@/components/modules/attendee/kit"
 import {
   Badge,
   Button,
   Card,
-  PageTitle,
   Segmented,
-  Stat,
   type Tone,
 } from "@/components/ui/primitives"
 import { Modal, downloadText } from "@/components/shared/modal"
@@ -171,57 +174,44 @@ export function AdminDashboard() {
 
   return (
     <AdminShell>
-      <PageTitle
+      <OpsHeader
         eyebrow="Sat 3 Oct · Event overview"
+        eyebrowIcon={Radio}
         title="Summit operations"
         description="Live status of every session, what needs you, and where ideas are landing."
-        action={
-          <div className="flex gap-2">
+        art={
+          <Illus
+            name="skyline-soft"
+            priority
+            className="pointer-events-none absolute right-0 bottom-0 hidden h-full w-auto opacity-70 xl:block"
+          />
+        }
+        actions={
+          <>
             <Button variant="secondary" onClick={exportAll}>
               <Download size={15} /> Export data
             </Button>
             <Link
               href="/admin/reports"
-              className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#0b57f5] px-3.5 text-[13.5px] font-medium text-white shadow-[0_1px_2px_rgba(11,87,245,.35)] hover:bg-[#0a4ddb]"
+              className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#0b57f5] px-3.5 text-[13.5px] font-medium text-white hover:bg-[#0a4ddb]"
             >
               Reports <ChevronRight size={15} />
             </Link>
-          </div>
+          </>
+        }
+        kpis={
+          <>
+            <KpiTile label="Live now" value={live.length} icon={Radio} tone="green" hint={`${sessions.filter((s) => s.status === "Closed").length}/${sessions.length} closed`} />
+            <KpiTile label="Ideas" value={ideas.length} icon={Lightbulb} tone="amber" hint={byTheme[0]?.n ? `most in ${byTheme[0].t.label}` : undefined} />
+            <KpiTile label="Session inputs" value={sessionInputs.length} icon={MessageCircle} tone="blue" />
+            <KpiTile label="Needs attention" value={attention.length} icon={AlertTriangle} tone="red" alert={attention.length > 0} />
+            <KpiTile label="Outcomes finalised" value={`${finalised}/${sessions.length}`} icon={CheckCircle2} tone="purple" />
+            <KpiTile label="Feedback avg" value={avg} icon={Sparkles} tone="rose" hint={`${fbList.length} resp.`} />
+          </>
         }
       />
-
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <Stat
-          label="Live sessions"
-          value={`${live.length}`}
-          icon={<Radio size={15} />}
-          tone="green"
-          hint={live[0] ? live[0].title : `${sessions.filter((s) => s.status === "Closed").length} of ${sessions.length} closed`}
-        />
-        <Stat
-          label="Ideas"
-          value={`${ideas.length}`}
-          icon={<Lightbulb size={15} />}
-          tone="amber"
-          hint={byTheme[0]?.n ? `Most in ${byTheme[0].t.label}` : "None yet"}
-        />
-        <Stat
-          label="Session inputs"
-          value={`${sessionInputs.length}`}
-          icon={<MessageCircle size={15} />}
-          tone="blue"
-          hint={`${inputs.filter((i) => i.kind === "question").length} questions · ${inputs.filter((i) => i.kind === "opinion").length} opinions`}
-        />
-        <Stat
-          label="Outcomes finalised"
-          value={`${finalised}/${sessions.length}`}
-          icon={<CheckCircle2 size={15} />}
-          tone="violet"
-          hint={`Feedback avg ${avg} · ${fbList.length} response${fbList.length === 1 ? "" : "s"}`}
-        />
-      </div>
-
-      <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <OpsBody>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <Card className="min-w-0 overflow-hidden">
           <div className="flex items-center justify-between border-b border-[#eef1f6] px-4 py-3">
             <h2 className="text-[14px] font-semibold text-[#0f1e4d]">Today&apos;s sessions</h2>
@@ -340,6 +330,7 @@ export function AdminDashboard() {
           </Card>
         </div>
       </div>
+      </OpsBody>
     </AdminShell>
   )
 }
@@ -389,11 +380,21 @@ export function OutcomesScreen() {
 
   return (
     <AdminShell>
-      <PageTitle
+      <OpsHeader
         eyebrow="Approval workflow"
+        eyebrowIcon={CheckCircle2}
         title="Session outcomes"
         description="Coordinators draft and submit. You approve. Only finalised outcomes go into reports."
+        kpis={
+          <>
+            <KpiTile label="Awaiting approval" value={rows.filter((s) => is(s, "awaiting")).length} icon={Clock3} tone="blue" alert={rows.some((s) => is(s, "awaiting"))} onClick={() => setFilter("awaiting")} />
+            <KpiTile label="In progress" value={rows.filter((s) => is(s, "progress")).length} icon={PenLine} tone="amber" onClick={() => setFilter("progress")} />
+            <KpiTile label="Finalised" value={rows.filter((s) => is(s, "finalised")).length} icon={CheckCircle2} tone="green" onClick={() => setFilter("finalised")} />
+            <KpiTile label="All sessions" value={rows.length} icon={CalendarDays} tone="purple" onClick={() => setFilter("all")} />
+          </>
+        }
       />
+      <OpsBody>
       <div className="mb-3">
         <Segmented
           value={filter}
@@ -460,6 +461,7 @@ export function OutcomesScreen() {
         </div>
       </Card>
 
+      </OpsBody>
       <Modal
         side
         wide
